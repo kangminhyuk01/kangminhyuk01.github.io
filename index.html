@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고드름 피하기</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(to top, #87CEEB, #fff); /* 하늘 배경 */
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background: transparent;
+        }
+        #lives {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            color: red;
+            font-size: 24px;
+        }
+        #score {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            color: #333;
+            font-size: 24px;
+        }
+        #message {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #333;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="lives">❤️❤️❤️</div>
+    <div id="score">Score: 0</div>
+    <div id="message"> 방향키로 움직이고 스페이스 바로 게임 시작! </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let dragon = {
+            x: 400,
+            y: 500,
+            width: 50,
+            height: 50,
+            speed: 5,
+        };
+        let obstacles = [];
+        let score = 0;
+        let lives = 3;
+        let gameStarted = false;
+        let gameSpeed = 2;
+
+        const keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+        };
+
+        function drawDragon() {
+            ctx.fillStyle = 'green';
+            ctx.beginPath();
+            ctx.arc(dragon.x + 25, dragon.y + 25, 25, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(dragon.x + 15, dragon.y + 20, 5, 0, Math.PI * 2);
+            ctx.arc(dragon.x + 35, dragon.y + 20, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(dragon.x + 15, dragon.y + 20, 2, 0, Math.PI * 2);
+            ctx.arc(dragon.x + 35, dragon.y + 20, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(dragon.x + 25, dragon.y + 35, 10, 0, Math.PI, false);
+            ctx.stroke();
+        }
+
+        function drawIcicle(x, y, width, height) {
+            ctx.fillStyle = '#00BFFF'; // 고드름 색상
+            ctx.beginPath();
+            ctx.moveTo(x, y + height); // 아래쪽 꼭지점
+            ctx.lineTo(x + width / 2, y); // 오른쪽 위 모서리
+            ctx.lineTo(x - width / 2, y); // 왼쪽 위 모서리
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                drawIcicle(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        function updateObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.y += gameSpeed;
+            });
+
+            if (obstacles.length > 0 && obstacles[0].y > canvas.height) {
+                obstacles.shift();
+                score++;
+                if (score % 5 === 0) {
+                    gameSpeed += 0.5;
+                }
+            }
+
+            if (Math.random() < 0.02) {
+                let obstacleWidth = Math.random() * 40 + 20;
+                obstacles.push({
+                    x: Math.random() * (canvas.width - obstacleWidth) + obstacleWidth / 2,
+                    y: -50,
+                    width: obstacleWidth,
+                    height: obstacleWidth * 1.5,
+                });
+            }
+        }
+
+        function drawLives() {
+            document.getElementById('lives').innerHTML = '❤️'.repeat(lives);
+        }
+
+        function drawScore() {
+            document.getElementById('score').textContent = `Score: ${score}`;
+        }
+
+        function gameOver() {
+            gameStarted = false;
+            document.getElementById('message').textContent = '게임종료! 다시 하려면 스페이스 바를 누르세요';
+            resetGame();
+        }
+
+        function resetGame() {
+            score = 0;
+            lives = 3;
+            gameSpeed = 2;
+            dragon.x = 400;
+            dragon.y = 500;
+            obstacles = [];
+        }
+
+        function update() {
+            if (!gameStarted) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (keys.ArrowUp && dragon.y > 0) {
+                dragon.y -= dragon.speed;
+            }
+            if (keys.ArrowDown && dragon.y + dragon.height < canvas.height) {
+                dragon.y += dragon.speed;
+            }
+            if (keys.ArrowLeft && dragon.x > 0) {
+                dragon.x -= dragon.speed;
+            }
+            if (keys.ArrowRight && dragon.x + dragon.width < canvas.width) {
+                dragon.x += dragon.speed;
+            }
+
+            drawDragon();
+            updateObstacles();
+            drawObstacles();
+
+            obstacles.forEach(obstacle => {
+                if (
+                    dragon.x < obstacle.x + obstacle.width / 2 &&
+                    dragon.x + dragon.width > obstacle.x - obstacle.width / 2 &&
+                    dragon.y < obstacle.y + obstacle.height &&
+                    dragon.y + dragon.height > obstacle.y
+                ) {
+                    lives--;
+                    drawLives();
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                    obstacles = obstacles.filter(obs => obs !== obstacle);
+                }
+            });
+
+            drawScore();
+            requestAnimationFrame(update);
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.code === 'Space' && !gameStarted) {
+                gameStarted = true;
+                document.getElementById('message').textContent = '';
+                resetGame();
+                update();
+            } else if (event.code.startsWith('Arrow')) {
+                keys[event.code] = true;
+            }
+        });
+
+        document.addEventListener('keyup', event => {
+            if (event.code.startsWith('Arrow')) {
+                keys[event.code] = false;
+            }
+        });
+    </script>
+</body>
+</html>
