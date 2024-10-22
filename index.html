@@ -81,7 +81,7 @@
     </div>
 
     <script>
-        const openaiApiKey = ${{secrets.OPENAIAPIKEY }}
+        const openaiApiKey = echo "Secrets : ${{secrets.OPENAIAPIKEY }}"
         
         const chatBox = document.getElementById('chat-box');
         const inputBox = document.getElementById('input-box');
