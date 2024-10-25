@@ -15,7 +15,7 @@
         #gameCanvas {
             display: block;
             margin: 0 auto;
-            background: transparent;
+            background: lightblue; /* 배경색 추가 */
         }
         #lives {
             position: absolute;
@@ -157,6 +157,8 @@
             dragon.x = 400;
             dragon.y = 500;
             obstacles = [];
+            drawLives();  // 생명 표시
+            drawScore();  // 점수 표시
         }
 
         function update() {
@@ -202,6 +204,7 @@
         }
 
         document.addEventListener('keydown', event => {
+            console.log(event.code);  // 키 입력 디버깅용 로그 추가
             if (event.code === 'Space' && !gameStarted) {
                 gameStarted = true;
                 document.getElementById('message').textContent = '';
